@@ -1,42 +1,38 @@
 const express = require("express");
-const Log = require("../logging_middleware");
+const path = require("path");
+const { getTopNotifications } = require("./notificationService");
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
+const TOP_N = 10;
 
-// Home route
-app.get("/", async (req, res) => {
-  await Log("backend", "info", "route", "Home route accessed");
-  res.send("Server is running");
-});
+const getToken = () => process.env.NOTIFICATION_TOKEN || "";
 
-// Users route
-app.get("/users", async (req, res) => {
+app.use(express.static(path.join(__dirname, "public")));
+
+app.get("/api/priority-inbox", async (req, res) => {
+  const token = getToken();
+  if (!token) {
+    return res.status(500).json({
+      error: "Set NOTIFICATION_TOKEN in your environment before starting the server.",
+    });
+  }
+
   try {
-    await Log("backend", "info", "controller", "Fetching users");
-    const users = ["Snehan", "Alex", "John"];
-    res.json(users);
-  } catch (err) {
-    await Log("backend", "error", "controller", "Error fetching users");
-    res.status(500).send("Error");
+    const top = await getTopNotifications(token, TOP_N);
+    res.json({ notifications: top });
+  } catch (error) {
+    const status = error.response?.status || 500;
+    const message =
+      error.response?.data?.message || error.message || "Failed to load notifications";
+    console.error("API error:", message);
+    res.status(status).json({ error: message });
   }
 });
 
-// Login route
-app.post("/login", async (req, res) => {
-  const { username } = req.body;
-
-  if (!username) {
-    await Log("backend", "warn", "handler", "Login without username");
-    return res.status(400).send("Username required");
+app.listen(PORT, () => {
+  console.log(`Priority Inbox UI: http://localhost:${PORT}`);
+  if (!getToken()) {
+    console.warn("Warning: NOTIFICATION_TOKEN is not set.");
   }
-
-  await Log("backend", "info", "service", `User ${username} logged in`);
-  res.send("Login successful");
-});
-
-// Start server
-app.listen(3000, async () => {
-  console.log("Server running on port 3000");
-  await Log("backend", "info", "config", "Server started");
 });

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Priority Inbox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="header-text">
+          <p class="eyebrow">Campus notifications</p>
+          <h1>Priority Inbox</h1>
+          <p class="subtitle">
+            Top 10 unread — <strong>Placement</strong> → <strong>Result</strong> →
+            <strong>Event</strong>, newest first within each type
+          </p>
+        </div>
+        <button type="button" id="refresh-btn" class="btn-refresh" aria-label="Refresh inbox">
+          <span class="btn-icon" aria-hidden="true">↻</span>
+          Refresh
+        </button>
+      </header>
+
+      <div id="banner" class="banner hidden" role="alert"></div>
+
+      <section class="inbox-panel" aria-labelledby="inbox-heading">
+        <div class="panel-head">
+          <h2 id="inbox-heading">Your top priorities</h2>
+          <span id="count-badge" class="count-badge">—</span>
+        </div>
+        <ol id="inbox-list" class="inbox-list"></ol>
+        <p id="empty-state" class="empty-state hidden">No notifications to show.</p>
+      </section>
+
+      <footer class="footer">
+        <span>Stage 1 · Priority heap</span>
+        <span id="updated-at">—</span>
+      </footer>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
