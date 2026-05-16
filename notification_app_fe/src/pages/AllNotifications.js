@@ -5,6 +5,7 @@ import NotificationCard from "../components/NotificationCard";
 import FilterBar from "../components/FilterBar";
 import PaginationBar from "../components/PaginationBar";
 import { useReadState } from "../hooks/useReadState";
+import TokenBanner from "../components/TokenBanner";
 
 const AllNotifications = () => {
   const [data, setData] = useState([]);
@@ -24,7 +25,7 @@ const AllNotifications = () => {
       setData(notifications);
       setHasNext(notifications.length === limit);
     } catch (err) {
-      setError(err.response?.data?.message || err.message);
+      setError(err.message || "Failed to load notifications");
       setData([]);
       setHasNext(false);
     } finally {
@@ -67,9 +68,16 @@ const AllNotifications = () => {
         onLimitChange={handleLimitChange}
       />
 
-      {error && (
+      <TokenBanner error={error} onSaved={load} />
+
+      {error &&
+        !error.toLowerCase().includes("token") &&
+        !error.toLowerCase().includes("authorization") && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
+          {error.includes("Network") && (
+            <> — Start the backend: <code>cd notification_app_be</code> then <code>npm start</code></>
+          )}
         </Alert>
       )}
 

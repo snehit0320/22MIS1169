@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Box,
@@ -9,12 +9,17 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { fetchAllNotifications } from "../api";
+import { fetchPriorityInbox } from "../api";
 import NotificationCard from "../components/NotificationCard";
-import { getTopPriority } from "../utils/priority";
 import { useReadState } from "../hooks/useReadState";
+import TokenBanner from "../components/TokenBanner";
 
 const TOP_N = 10;
+
+const isTokenError = (message) => {
+  const lower = (message || "").toLowerCase();
+  return lower.includes("token") || lower.includes("authorization");
+};
 
 const PriorityNotifications = () => {
   const [data, setData] = useState([]);
@@ -23,31 +28,23 @@ const PriorityNotifications = () => {
   const [error, setError] = useState("");
   const { isRead, markRead, markUnread } = useReadState();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const all = await fetchAllNotifications(type);
-        const top = getTopPriority(all, TOP_N);
-        if (!cancelled) setData(top);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err.response?.data?.message || err.message);
-          setData([]);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const top = await fetchPriorityInbox(type, TOP_N);
+      setData(top);
+    } catch (err) {
+      setError(err.message || "Failed to load priority notifications");
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
   }, [type]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const toggleRead = (id) => {
     if (isRead(id)) markUnread(id);
@@ -78,9 +75,18 @@ const PriorityNotifications = () => {
         </Select>
       </FormControl>
 
-      {error && (
+      <TokenBanner error={error} onSaved={load} />
+
+      {error && !isTokenError(error) && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
+          {(error.includes("Network") || error.includes("ECONNREFUSED")) && (
+            <>
+              {" "}
+              — Start backend: <code>cd notification_app_be</code> then{" "}
+              <code>npm start</code>
+            </>
+          )}
         </Alert>
       )}
 
@@ -88,6 +94,8 @@ const PriorityNotifications = () => {
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
         </Box>
+      ) : !error && data.length === 0 ? (
+        <Alert severity="info">No notifications to rank.</Alert>
       ) : (
         data.map((n, index) => (
           <NotificationCard
